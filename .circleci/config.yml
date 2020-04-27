@@ -9,6 +9,8 @@ jobs:
       - run: docker push $DOCKER_USERNAME/debug:$TAG
       - run: docker build -f fargate-ssm/Dockerfile -t $DOCKER_USERNAME/fargate-ssm:$TAG ./fargate-ssm/
       - run: docker push $DOCKER_USERNAME/fargate-ssm:$TAG
+      - run: docker build -f fargate-ssm-standalone/Dockerfile -t $DOCKER_USERNAME/fargate-ssm-standalone:$TAG ./fargate-ssm-standalone/
+      - run: docker push $DOCKER_USERNAME/fargate-ssm-standalone:$TAG
     environment:
       TAG: latest
 workflows:

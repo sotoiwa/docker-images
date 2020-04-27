@@ -2,7 +2,7 @@
 
 Fargateのコンテナ内でシェルを起動するためのコンテナイメージ。
 
-あらかじめActivation IDを作成してコンテナの起動時に環境変数から渡す。
+コンテナの起動時にアクティベーションの作成とインスタンスの登録を行う。
 
 ## 参考リンク
 
@@ -47,48 +47,91 @@ aws iam attach-role-policy \
     --policy-arn arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 ```
 
-## アクティベーションの作成
+## タスクロールの作成
 
-アクティベーションを作成し、IDとコードを保管しておく。
+ロールを作成する。
 
 ```sh
-aws ssm create-activation \
-  --default-instance-name "DockerSSM" \
-  --iam-role "SSMServiceRole" \
-  --registration-limit 1 | tee activation.json
+cat <<EOF > ecs-tasks-trust-policy.json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+aws iam create-role \
+    --role-name MyFargateSSMStandaloneTaskRole \
+    --assume-role-policy-document file://ecs-tasks-trust-policy.json
+```
+
+管理ポリシーを作成する。PassRoleが必要。
+
+```sh
+ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
+cat <<EOF > ecs-tasks-policy.json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "iam:PassRole"
+      ],
+      "Resource": "arn:aws:iam::${ACCOUNT_ID}:role/SSMServiceRole"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:CreateActivation"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOF
+aws iam create-policy \
+    --policy-name MyFargateSSMStandaloneTaskPolicy \
+    --policy-document file://ecs-tasks-policy.json
+PolicyArn=$(aws iam list-policies | jq -r '.Policies[] | select( .PolicyName | test("MyFargateSSMStandaloneTaskPolicy") ) | .Arn')
+```
+
+ロールに管理ポリシーをアタッチする。
+
+```sh
+aws iam attach-role-policy \
+    --role-name MyFargateSSMStandaloneTaskRole \
+    --policy-arn ${PolicyArn}
+RoleArn=$(aws iam list-roles | jq -r '.Roles[] | select( .RoleName | test("MyFargateSSMStandaloneTaskRole") ) | .Arn')
 ```
 
 ## タスク定義の作成
 
-タスク定義のjsonを作成する。環境変数にActivation IDとActivation Codeを入れる。
+タスク定義のjsonを作成する。
 
 ```sh
-activation_id=$(cat activation.json | jq -r '.ActivationId')
-activation_code=$(cat activation.json | jq -r '.ActivationCode')
 cat <<EOF > task-definition.json
 {
-  "family": "fargate-ssm",
+  "family": "fargate-ssm-standalone",
+  "taskRoleArn": "${RoleArn}",
   "executionRoleArn": "ecsTaskExecutionRole",
   "networkMode": "awsvpc",
   "containerDefinitions": [
     {
-      "name": "fargate-ssm",
+      "name": "fargate-ssm-standalone",
       "image": "${repo}",
       "essential": true,
-      "environment": [
-        {
-          "name": "ACTIVATION_ID",
-          "value": "${activation_id}"
-        },
-        {
-          "name": "ACTIVATION_CODE",
-          "value": "${activation_code}"
-        }
-      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/fargate-ssm",
+          "awslogs-group": "/ecs/fargate-ssm-standalone",
           "awslogs-region": "ap-northeast-1",
           "awslogs-stream-prefix": "ecs"
         }
@@ -111,5 +154,5 @@ aws ecs register-task-definition --cli-input-json file://task-definition.json
 ロググループを作成する。
 
 ```sh
-aws logs create-log-group --log-group-name "/ecs/fargate-ssm"
+aws logs create-log-group --log-group-name "/ecs/fargate-ssm-standalone"
 ```
