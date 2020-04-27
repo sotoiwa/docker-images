@@ -4,8 +4,7 @@ set -eu
 set -o pipefail
 
 ACTIVATE_PARAMETERS=$(aws ssm create-activation \
-  --default-instance-name "${RESOURCE_STAGE}-${SERVICE_NAME}-${RESOURCE_VERSION}" \
-  --description "${RESOURCE_STAGE}-${SERVICE_NAME}-${RESOURCE_VERSION}" \
+  --default-instance-name "DockerSSM" \
   --iam-role "service-role/AmazonEC2RunCommandRoleForManagedInstances" \
   --registration-limit 1)
 
