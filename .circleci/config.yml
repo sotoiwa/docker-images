@@ -4,11 +4,12 @@ jobs:
     machine: true
     steps:
       - checkout
-      - run: docker build -f debug/Dockerfile -t $DOCKER_USERNAME/$REPO:$TAG ./debug/
       - run: docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-      - run: docker push $DOCKER_USERNAME/$REPO:$TAG
+      - run: docker build -f debug/Dockerfile -t $DOCKER_USERNAME/debug:$TAG ./debug/
+      - run: docker push $DOCKER_USERNAME/debug:$TAG
+      - run: docker build -f fargate-ssm/Dockerfile -t $DOCKER_USERNAME/fargate-ssm:$TAG ./debug/
+      - run: docker push $DOCKER_USERNAME/fargate-ssm:$TAG
     environment:
-      REPO: debug
       TAG: latest
 workflows:
   version: 2
