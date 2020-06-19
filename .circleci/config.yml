@@ -11,6 +11,8 @@ jobs:
       - run: docker push $DOCKER_USERNAME/fargate-ssm:$TAG
       - run: docker build -f fargate-ssm-standalone/Dockerfile -t $DOCKER_USERNAME/fargate-ssm-standalone:$TAG ./fargate-ssm-standalone/
       - run: docker push $DOCKER_USERNAME/fargate-ssm-standalone:$TAG
+      - run: docker build -f flask-sample/Dockerfile -t $DOCKER_USERNAME/flask-sample:$TAG ./flask-sample/
+      - run: docker push $DOCKER_USERNAME/flask-sample:$TAG
     environment:
       TAG: latest
 workflows:
