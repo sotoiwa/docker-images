@@ -1,13 +1,19 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - 'master'
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   docker:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - debug
+          - fargate-ssm
+          - fargate-ssm-standalone
+          - flask-sample
     steps:
       -
         name: Checkout
@@ -29,6 +35,6 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          context: ./debug/
+          context: ./${{ matrix.image }}/
           push: true
-          tags: sotosugi/debug:latest
+          tags: sotosugi/${{ matrix.image }}:latest
