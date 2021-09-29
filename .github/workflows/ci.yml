@@ -31,4 +31,4 @@ jobs:
         with:
           context: ./debug/
           push: true
-          tags: user/app:latest
+          tags: sotosugi/debug:latest
