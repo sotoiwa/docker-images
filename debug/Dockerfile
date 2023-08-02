@@ -9,6 +9,7 @@ RUN apt-get update \
       jq \
       language-pack-ja \
       net-tools \
+      ncat \
       stress \
       tcpdump \
       tzdata \
