@@ -14,6 +14,7 @@ RUN apt-get update \
       tcpdump \
       tzdata \
       unzip \
+      lsof \
       vim \
       wget \
     && rm -rf /var/lib/apt/lists/* \
