@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:kinetic
 
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y \
